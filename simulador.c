@@ -24,10 +24,10 @@ void imprime_lista_encadeada(tabelaPaginas *N);
 void main(int argc, char *argv[])
 {
     int tamPag = 0, tamMem = 0, qtdPag, qtdPagProcesso, cont = 1, tamanho;
-    char nomeArq[20];
+    char nomeArq[20], op;
     unsigned int e = 0x0, eL;
     FILE *ftp;
-    char linha[80], tam[10], unidade[3], nomeProcesso[3];
+    char unidade[3], nomeProcesso[3], endereco[7];
     tabelaPaginas *MyList;
     inicializa_lista(&MyList);
 
@@ -90,30 +90,11 @@ void main(int argc, char *argv[])
 
     while (!feof(ftp))
     {
-        fgets(linha, 79, ftp);
-        nomeProcesso[0] = linha[0];
-        nomeProcesso[1] = linha[1];
-        nomeProcesso[2] = '\0';
-        if (linha[3] == 'C')
+        fscanf(ftp,"%s %c %s",nomeProcesso,&op, endereco);
+        if (op == 'C')
         {
-            cont = 0;
-            int i;
-            for (i = 5; i < strlen(linha); i++)
-            {
-                if (linha[i] == ' ')
-                {
-                    tam[cont] = '\0';
-                    break;
-                }
-                tam[cont] = linha[i];
-                cont++;
-            }
-
-            unidade[0] = linha[i + 1];
-            unidade[1] = linha[i + 2];
-            unidade[2] = '\0';
-            tamanho = atoi(tam);
-
+            tamanho=atoi(endereco);
+            fscanf(ftp,"%s",unidade);
             if (!strcmp(unidade, "MB"))
             {
                 tamanho *= 1024;
@@ -148,34 +129,18 @@ void main(int argc, char *argv[])
                 aux->prox = novo;
             }
 
-            for (i = 0; i < qtdPag; i++)
-            {
-                if (!strcmp(ram[i].processo, "00"))
-                {
-                    cont = i;
-                    break;
-                }
-            }
-
-            int j=0;
             eL=0x0;
-            for (i = cont; i < (cont+qtdPagProcesso); i++)
+            for (int i = 0; i < qtdPagProcesso; i++)
             {
-                printf("Página 0x%x alocada para o processo %s\n",ram[i].endereco, nomeProcesso);
-                strcpy(ram[i].processo, nomeProcesso);
-                novo->enderecoL[j]=eL;
-                novo->enderecoF[j]=ram[i].endereco;
-                j++;
+                novo->enderecoL[i]=eL;
+                novo->enderecoF[i]=NULL;
                 eL++;
             }
             printf("\n\n");
+            continue;
         }
     }
 
-    for (int i = 0; i < qtdPag; i++)
-    {
-        printf("0x%X %s\n", ram[i].endereco, ram[i].processo);
-    }
     fclose(ftp);
     imprime_lista_encadeada(MyList);
 }
@@ -205,9 +170,13 @@ void imprime_lista_encadeada(tabelaPaginas *N)
     else
     {
         for (aux = N; aux != NULL; aux = aux->prox){
-            printf("\n%s\n",aux->processo);
+            printf("\n%s\n----Tabela de Páginas----\nE Lógico x E Físico\n",aux->processo);
             for(int i=0;i<aux->qtdPag;i++){
-                printf("0x%x - 0x%x\n",aux->enderecoL[i],aux->enderecoF[i]);
+                if(aux->enderecoF[i]==NULL){
+                    printf("0x%x - N/A\n",aux->enderecoL[i]);
+                }else{
+                    printf("0x%x - 0x%x\n",aux->enderecoL[i],aux->enderecoF[i]);
+                }
             }
         }
     }
