@@ -319,7 +319,7 @@ void atualiza_tabela_pag(tabelaPaginas **N, fila **fila, int indice, char *nomeP
             if(i==(qtdPag-1)){
                 desaloca_processo(ram,fila,N,qtdPag);
                 imprime_memoria((*ram),qtdPag);
-                i=0;
+                i=-1;
             }
         }
     }else{
