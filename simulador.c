@@ -19,14 +19,27 @@ typedef struct tab
     struct tab *prox;
 } tabelaPaginas;
 
+typedef struct filo{
+    char nome[2];
+    struct filo *prox;
+}fila;
+
 void inicializa_lista(tabelaPaginas **N);
 tabelaPaginas *Cria_Nodo();
 void imprime_lista_encadeada(tabelaPaginas *N);
 int busca_lista(tabelaPaginas *N, char *nome, tabelaPaginas **R);
 int retorna_indice_pagina(tabelaPaginas *N, unsigned int endereco);
-void atualiza_tabela_pag(tabelaPaginas **N, int indice, char *nomeProcesso, int qtdPag, memoria **ram);
+void atualiza_tabela_pag(tabelaPaginas **N, fila **fila, int indice, char *nomeProcesso, int qtdPag, memoria **ram, char op);
 void imprime_memoria(memoria *ram, int qtdPag);
 int retorna_pagina_do_endereco_lido(tabelaPaginas *N, unsigned int enderecoLido, unsigned int *pagina);
+void insere_fila(fila **N, char *nome);
+int remove_fila(fila **N);
+int busca_fila(fila *N, char *nome);
+int exclui_elem_fila(fila **N, char *nome);
+fila *Cria_Nodo_Fila();
+void inicializa_fila(fila **N);
+void imprime_fila(fila *N);
+void desaloca_processo(memoria **ram, fila **N, tabelaPaginas **pags, int qtdPag);
 
 // ./simulador -p 8(tamanho da página em kb) -m 1024(tamanho da memoria em kb)
 void main(int argc, char *argv[])
@@ -37,6 +50,7 @@ void main(int argc, char *argv[])
     FILE *ftp;
     char unidade[3], nomeProcesso[3];
     tabelaPaginas *MyList, *retorno;
+    fila *processos;
     inicializa_lista(&MyList);
 
     memoria *ram;
@@ -160,7 +174,7 @@ void main(int argc, char *argv[])
             if(op=='R')
                 printf("\nOperaçao de Leitura para o processo %s no endereço %x\n",nomeProcesso,endereco);
             else
-                printf("\nOperaçao de Leitura para o processo %s no endereço %x",nomeProcesso,endereco);
+                printf("\nOperaçao de Gravação para o processo %s no endereço %x\n",nomeProcesso,endereco);
             
             if(retorna_pagina_do_endereco_lido(retorno, endereco, &pagina)){
                 printf("\nEndereço pertence à página %x\n",pagina);
@@ -169,8 +183,17 @@ void main(int argc, char *argv[])
                     printf("ERRO NAO ACHOU ENDERECO LOGICO NO VETOR!");
                     exit(0);
                 }
-                atualiza_tabela_pag(&retorno, indice, nomeProcesso, qtdPag, &ram);
+                if(busca_fila(processos, nomeProcesso)==1){
+                    exclui_elem_fila(&processos, nomeProcesso);
+                    insere_fila(&processos, nomeProcesso);
+                }else if(!busca_fila(processos, nomeProcesso)){
+                    insere_fila(&processos, nomeProcesso);
+                }
+                atualiza_tabela_pag(&retorno, &processos, indice, nomeProcesso, qtdPag, &ram, op);
+                imprime_fila(processos);
                 printf("\nOperação finalizada\n-----------------------------------------------\n");
+            }else{
+                printf("\nProcesso tentando acessar endereço maior que o disponível!\n");
             }
         }
     }
@@ -197,6 +220,23 @@ tabelaPaginas *Cria_Nodo() //aloca memória para o nodo
     return p;
 }
 
+fila *Cria_Nodo_Fila() //aloca memória para o nodo
+{
+    fila *p;
+    p = (fila *)malloc(sizeof(fila));
+    if (!p)
+    {
+        printf("Problema de alocação");
+        exit(0);
+    }
+    return p;
+}
+
+void inicializa_fila(fila **N) //inicializa a lista
+{
+    *N = NULL;
+}
+
 void imprime_lista_encadeada(tabelaPaginas *N)
 {
     tabelaPaginas *aux;
@@ -214,6 +254,21 @@ void imprime_lista_encadeada(tabelaPaginas *N)
                 }
             }
         }
+    }
+}
+
+void imprime_fila(fila *N)
+{
+    fila *aux;
+    if (N == NULL)
+        printf("\n A lista está vazia!!");
+    else
+    {
+        printf("\n\n----------------------FILA DE PROCESSOS-----------------------\n");
+        for (aux = N; aux != NULL; aux = aux->prox){
+            printf("[%s]",aux->nome);
+        }
+        printf("\n\n");
     }
 }
 
@@ -245,7 +300,7 @@ int retorna_indice_pagina(tabelaPaginas *N, unsigned int endereco){
     return -1;
 }
 
-void atualiza_tabela_pag(tabelaPaginas **N, int indice, char *nomeProcesso, int qtdPag, memoria **ram){
+void atualiza_tabela_pag(tabelaPaginas **N, fila **fila, int indice, char *nomeProcesso, int qtdPag, memoria **ram, char op){
     if(!(*N)->alocado[indice]){
         printf("\nMemória não alocada para endereço lógico %x, buscando espaço em memória...\n",(*N)->enderecoL[indice]);
         for(int i=0;i<qtdPag;i++){
@@ -253,11 +308,29 @@ void atualiza_tabela_pag(tabelaPaginas **N, int indice, char *nomeProcesso, int 
                 printf("\nEspaço encontrado no endereço %x, alocando para o processo...\n",(*ram)[i].endereco);
                 strcpy((*ram)[i].processo,nomeProcesso);
                 (*ram)[i].alocado=1;
-                printf("\nAtualizando tabela de páginas, %x corresponde à %x\n",(*N)->enderecoL[indice],(*N)->enderecoF[indice]);
+                if(op=='W'){
+                    (*ram)[i].alteracao=1;
+                }
                 (*N)->enderecoF[indice]=(*ram)[i].endereco;
+                printf("\nAtualizando tabela de páginas, %x corresponde à %x\n",(*N)->enderecoL[indice],(*N)->enderecoF[indice]);
                 (*N)->alocado[indice]=1;
-                break;
+                return;
             }
+            if(i==(qtdPag-1)){
+                desaloca_processo(ram,fila,N,qtdPag);
+                imprime_memoria((*ram),qtdPag);
+                i=0;
+            }
+        }
+    }else{
+        if(op=='W'){
+            for(int i=0;i<qtdPag;i++){
+                if((*ram)[i].endereco==(*N)->enderecoF[indice]){
+                    (*ram)[i].alteracao=1;
+                    break;
+                }
+            }
+
         }
     }
 }
@@ -280,15 +353,120 @@ int retorna_pagina_do_endereco_lido(tabelaPaginas *N, unsigned int enderecoLido,
     for(i=0;i<(N->qtdPag-1);i++){
         if(enderecoLido > N->enderecoL[i] && enderecoLido < N->enderecoL[i+1]){
             *pagina=N->enderecoL[i];
-            break;
+            return 1;
         }
         if(enderecoLido == N->enderecoL[i]){
             *pagina=N->enderecoL[i];
-            break;
+            return 1;
         }
     }
-    if(N->enderecoF[i]!=NULL){
+    return 0;
+}
+
+int exclui_elem_fila(fila **N, char *nome)
+{
+    fila *aux, *aux2;
+    int *dado2;
+    if (*N == NULL)
         return 0;
+    else
+    {
+        if (!(strcmp((*N)->nome, nome)))
+        {
+            remove_fila(N);
+            return 1;
+        }
+        else
+        {
+            aux2 = *N;
+            for(aux = (*N)->prox; aux->prox != NULL; aux = aux->prox)
+            {
+                if (!(strcmp(aux->nome, nome)))
+                {    
+                    aux2->prox = aux->prox;
+                    free(aux);
+                    return 1;
+                }
+                aux2=aux;
+            }
+            if(!strcmp(aux->nome, nome))
+            {    
+                printf("\nNAO DEVERIA REMOVER DO FIM\n");
+                return 0;
+            }
+        }
+        //Elemento não encontrado
+        return -1;
+    }
+}
+
+int busca_fila(fila *N, char *nome)
+{
+    fila *aux;
+
+    for (aux = N; aux != NULL; aux = aux->prox)
+    {
+        if (!strcmp(aux->nome, nome))
+        {
+            if(aux->prox==NULL){
+                return 2;
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int remove_fila(fila **N)
+{
+    fila *aux;
+    if (*N == NULL) //Verifica se a lista está vazia
+        return 0;
+    else
+    {
+        aux = (*N)->prox;
+        free(*N);
+        *N = aux;
     }
     return 1;
+}
+
+void insere_fila(fila **N, char *nome)
+{
+    fila *novo, *aux;
+    novo = Cria_Nodo();
+    strcpy(novo->nome, nome);
+    novo->prox = NULL;
+    if (*N == NULL)
+        *N = novo;
+    else
+    {
+        aux = *N;
+        while (aux->prox != NULL)
+            aux = aux->prox;
+        aux->prox = novo;
+    }
+}
+
+void desaloca_processo(memoria **ram, fila **N, tabelaPaginas **pags, int qtdPag){
+    char nomeProcessoDesalocar[2];
+    strcpy(nomeProcessoDesalocar,(*N)->nome);
+    printf("\n%s\n",nomeProcessoDesalocar);
+    remove_fila(N);
+    tabelaPaginas *aux;
+    for(aux=(*pags);aux!=NULL;aux=aux->prox){
+        if(!strcmp(aux->processo, nomeProcessoDesalocar)){
+            for(int i=0;i<aux->qtdPag;i++){
+                aux->enderecoF[i]=NULL;
+                aux->alocado[i]=0;
+            }
+        }
+    }
+    for(int i=0;i<qtdPag;i++){
+        if(!strcmp((*ram)[i].processo,nomeProcessoDesalocar)){
+            strcpy((*ram)[i].processo,"00");
+            (*ram)[i].alocado=0;
+            (*ram)[i].alteracao=0;
+        }
+    }
 }
