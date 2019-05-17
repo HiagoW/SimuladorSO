@@ -16,7 +16,7 @@ typedef struct tab
     char processo[3];
     unsigned int *enderecoL, *enderecoF;
     int *alocado;
-    int qtdPag;
+    int qtdPag, contSwap, tamanho;
     struct tab *prox;
 } tabelaPaginas;
 
@@ -33,7 +33,7 @@ typedef struct sw{
 
 void inicializa_lista(tabelaPaginas **N);
 tabelaPaginas *Cria_Nodo();
-void imprime_lista_encadeada(tabelaPaginas *N);
+void imprime_lista_encadeada(tabelaPaginas *N, int tamPag);
 int busca_lista(tabelaPaginas *N, char *nome, tabelaPaginas **R);
 int retorna_indice_pagina(tabelaPaginas *N, unsigned int endereco);
 void atualiza_tabela_pag(tabelaPaginas **N, tabelaPaginas **tabela, fila **fila, int indice, char *nomeProcesso, int qtdPag, memoria **ram, char op, swap **S);
@@ -161,6 +161,8 @@ void main(int argc, char *argv[])
             novo->enderecoL = (unsigned int*) malloc(qtdPagProcesso*sizeof(unsigned int));
             novo->enderecoF = (unsigned int*) malloc(qtdPagProcesso*sizeof(unsigned int));
             novo->alocado = (int*) malloc(qtdPagProcesso*sizeof(int));
+            novo->tamanho=tamanho;
+            novo->contSwap=0;
             strcpy(novo->processo,nomeProcesso);
             novo->prox = NULL;
             if (MyList == NULL)
@@ -209,9 +211,9 @@ void main(int argc, char *argv[])
                     insere_fila(&processos, nomeProcesso);
                 }
                 atualiza_tabela_pag(&retorno, &MyList, &processos, indice, nomeProcesso, qtdPag, &ram, op, &Swap);
-                /*imprime_memoria(ram,qtdPag);
-                imprime_fila(processos);
-                imprime_lista_encadeada(MyList);*/
+                //imprime_memoria(ram,qtdPag);
+                //imprime_fila(processos);
+                //imprime_lista_encadeada(MyList);
                 printf("\nOperação finalizada\n-----------------------------------------------\n");
             }else{
                 printf("\nProcesso tentando acessar endereço maior que o disponível!\n");
@@ -220,8 +222,9 @@ void main(int argc, char *argv[])
     }
     printf("\nGravando dados da SWAP no HD...\n");
     fclose(ftp);
-    //imprime_memoria(ram, qtdPag);
-    //imprime_lista_encadeada(MyList);
+    imprime_memoria(ram, qtdPag);
+    imprime_lista_encadeada(MyList,tamPag);
+    imprime_swap(Swap);
 }
 
 void inicializa_lista(tabelaPaginas **N) //inicializa a lista
@@ -258,15 +261,20 @@ void inicializa_fila(fila **N) //inicializa a lista
     *N = NULL;
 }
 
-void imprime_lista_encadeada(tabelaPaginas *N)
+void imprime_lista_encadeada(tabelaPaginas *N, int tamPag)
 {
     tabelaPaginas *aux;
+    float porcent;
     if (N == NULL)
         printf("\n A lista está vazia!!");
     else
     {
         for (aux = N; aux != NULL; aux = aux->prox){
-            printf("\n%s\n----Tabela de Páginas----\nE Lógico x E Físico\n",aux->processo);
+            //printf("%d %d %d",aux->contSwap,aux->tamanho,tamPag);
+            porcent=(float)(((float)aux->contSwap*tamPag)/(float)aux->tamanho)*100; 
+            if(porcent>100)
+                porcent=100;   
+            printf("\n%s - %.2f por cento do processo na swap \n----Tabela de Páginas----\nE Lógico x E Físico\n",porcent,aux->processo);
             for(int i=0;i<aux->qtdPag;i++){
                 if(aux->alocado[i]==0){
                     printf("%x - N/A\n",aux->enderecoL[i]);
@@ -337,6 +345,7 @@ void atualiza_tabela_pag(tabelaPaginas **N, tabelaPaginas **tabela, fila **fila,
             if(!(*ram)[i].alocado){
                 printf("\nEspaço encontrado no endereço %x, alocando para o processo...\n",(*ram)[i].endereco);
                 if(remove_swap(S,nomeProcesso,(*N)->enderecoL[indice])==1){
+                    (*N)->contSwap--;
                     printf("\nBuscando dados gravados na SWAP...\n");
                 }
                 strcpy((*ram)[i].processo,nomeProcesso);
@@ -372,6 +381,17 @@ void atualiza_tabela_pag(tabelaPaginas **N, tabelaPaginas **tabela, fila **fila,
                                         if(aux->enderecoF[y]==enderecoFD){
                                             aux->enderecoF[y]=NULL;
                                             aux->alocado[y]=0;
+                                            for(int z=0;z<qtdPag;z++){
+                                                if((*ram)[z].endereco==enderecoFD){
+                                                    if((*ram)[z].alteracao==1){
+                                                        aux->contSwap++;
+                                                        insere_swap(S,nomeProcessoD,aux->enderecoL[y]);
+                                                    }
+                                                    strcpy((*ram)[z].processo,"00");
+                                                    (*ram)[z].alocado=0;
+                                                    (*ram)[z].alteracao=0;
+                                                }
+                                            }
                                             break;
                                         }
                                     }
@@ -416,6 +436,17 @@ void atualiza_tabela_pag(tabelaPaginas **N, tabelaPaginas **tabela, fila **fila,
                                         if(aux->enderecoF[y]==enderecoFD){
                                             aux->enderecoF[y]=NULL;
                                             aux->alocado[y]=0;
+                                            for(int z=0;z<qtdPag;z++){
+                                                if((*ram)[z].endereco==enderecoFD){
+                                                    if((*ram)[z].alteracao==1){
+                                                        aux->contSwap++;
+                                                        insere_swap(S,nomeProcessoD,aux->enderecoL[y]);
+                                                    }
+                                                    strcpy((*ram)[z].processo,"00");
+                                                    (*ram)[z].alocado=0;
+                                                    (*ram)[z].alteracao=0;
+                                                }
+                                            }
                                             break;
                                         }
                                     }
@@ -601,12 +632,14 @@ void desaloca_processo(memoria **ram, fila **N, tabelaPaginas **pags, int qtdPag
             if(!controle){
                 remove_fila(N);
             }
+            break;
         }
     }
     
     for(int i=0;i<qtdPag;i++){
         if((*ram)[i].endereco==enderecoFDesaloca){
             if((*ram)[i].alteracao){
+                aux->contSwap++;
                 insere_swap(S,nomeProcessoDesalocar,enderecoLDesaloca);
             }
             strcpy((*ram)[i].processo,"00");
