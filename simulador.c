@@ -1,3 +1,6 @@
+//Fernando Luiz Hoflinger
+//Hiago William Petris
+//Leonardo Barobsa Marques
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
