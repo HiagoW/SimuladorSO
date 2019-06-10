@@ -68,10 +68,10 @@ void imprime_swap(swap *N);
 int algoritmo;
 int indiceMem=0;
 
-// ./simulador -p 8(tamanho da página em kb) -m 1024(tamanho da memoria em kb)
+// ./simulador -p 8(tamanho da página em kb) -m 1024(tamanho da memoria em kb) arquivo.txt
 void main(int argc, char *argv[])
 {
-    printf("\nEscolha o Algoritmo de Gerenciamento de Memória\n1.LRU\n2.LRU c/ Digito\n3.LRU c/ Segunda chance:  ");
+    printf("\nEscolha o Algoritmo de Gerenciamento de Memória\n1.LRU\n2.LRU c/ Digito\n3.Segunda chance:  ");
     scanf("%d",&algoritmo);
     int tamPag = 0, tamMem = 0, qtdPag, qtdPagProcesso, cont = 1, tamanho, indice;
     char nomeArq[50], op;
