@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 typedef struct mem
 {
@@ -30,6 +31,17 @@ typedef struct sw{
     unsigned int endereco;
     struct sw *prox;
 }swap;
+
+void delay(int milliseconds)
+{
+    long pause;
+    clock_t now,then;
+
+    pause = milliseconds*(CLOCKS_PER_SEC/1000);
+    now = then = clock();
+    while( (now-then) < pause )
+        now = clock();
+}
 
 void inicializa_lista(tabelaPaginas **N);
 tabelaPaginas *Cria_Nodo();
@@ -76,7 +88,7 @@ void main(int argc, char *argv[])
 
     if (argc != 6)
     {
-        printf("Quantidade de parametros errados!");
+        delay(750); printf("Quantidade de parametros errados!");
         exit(0);
     }
     for (int i = 1; i < argc; i += 2)
@@ -93,17 +105,17 @@ void main(int argc, char *argv[])
     }
     if (tamPag <= 0 || tamMem <= 0)
     {
-        printf("Tamanho de página e memória devem ser maior que 0.");
+        delay(750); printf("Tamanho de página e memória devem ser maior que 0.");
         exit(0);
     }
     if (tamMem < tamPag)
     {
-        printf("Tamanho de pagina deve ser menor que tamanho de memória.");
+        delay(750); printf("Tamanho de pagina deve ser menor que tamanho de memória.");
         exit(0);
     }
     if (((float)(tamMem % tamPag)) != 0)
     {
-        printf("Tamanho de memória deve ser multiplo do tamanho de página.");
+        delay(750); printf("Tamanho de memória deve ser multiplo do tamanho de página.");
         exit(0);
     }
     strcpy(nomeArq, argv[5]);
@@ -111,27 +123,27 @@ void main(int argc, char *argv[])
     qtdPag = tamMem / tamPag;
 
     ram = (memoria *)malloc(qtdPag * sizeof(memoria));
-    printf("------------------------------Criando páginas da memória--------------------------------\n");
+    delay(750); printf("------------------------------Criando páginas da memória--------------------------------\n");
     for (int i = 0; i < qtdPag; i++)
     {
         ram[i].endereco = e;
         strcpy(ram[i].processo, "00");
         ram[i].alocado=0;
         ram[i].alteracao=0;
-        printf("%X ", ram[i].endereco);
+        delay(750); printf("%X ", ram[i].endereco);
         e += tamPag;
         cont++;
         if (cont % 16 == 0)
-            printf("\n");
+            delay(750); printf("\n");
     }
-    printf("\n--------------------------------------------------------------------\n");
+    delay(750); printf("\n--------------------------------------------------------------------\n");
 
-    if ((ftp = fopen("arquivo.txt", "r")) == NULL)
+    if ((ftp = fopen(nomeArq, "r")) == NULL)
     {
         exit(0);
     }
 
-    printf("\nLendo arquivo...\n");
+    delay(750); printf("\nLendo arquivo...\n");
     while (!feof(ftp))
     {
         fscanf(ftp,"%s %c",nomeProcesso,&op);
@@ -153,8 +165,8 @@ void main(int argc, char *argv[])
                 qtdPagProcesso++;
             }
 
-            printf("\n\nProcesso %s criado.\nTamanho: %d\nQuantidade de Páginas: %d\n",nomeProcesso,tamanho,qtdPagProcesso); 
-            printf("\nOperação finalizada\n-----------------------------------------------\n");
+            delay(750); printf("\n\nProcesso %s criado.\nTamanho: %d\nQuantidade de Páginas: %d\n",nomeProcesso,tamanho,qtdPagProcesso); 
+            delay(750); printf("\nOperação finalizada\n-----------------------------------------------\n");
             tabelaPaginas *novo, *aux;
             novo = Cria_Nodo();
             novo->qtdPag=qtdPagProcesso;
@@ -183,25 +195,25 @@ void main(int argc, char *argv[])
                 novo->alocado[i]=0;
                 eL+=tamPag;
             }
-            printf("\n\n");
+            delay(750); printf("\n\n");
             continue;
         }else{
             indice=-1;
             fscanf(ftp,"%x",&endereco);
             if(!busca_lista(MyList,nomeProcesso,&retorno)){
-                printf("ERRO NAO ACHOU PROCESSO!");
+                delay(750); printf("ERRO NAO ACHOU PROCESSO!");
                 exit(0);
             }
-            if(op=='R')
-                printf("\nOperaçao de Leitura para o processo %s no endereço %x\n",nomeProcesso,endereco);
-            else
-                printf("\nOperaçao de Gravação para o processo %s no endereço %x\n",nomeProcesso,endereco);
-            
+            if(op=='R'){
+                delay(750); printf("\nOperaçao de Leitura para o processo %s no endereço %x\n",nomeProcesso,endereco);
+            }else{
+                delay(750); printf("\nOperaçao de Gravação para o processo %s no endereço %x\n",nomeProcesso,endereco);
+            }
             if(retorna_pagina_do_endereco_lido(retorno, endereco, &pagina)){
-                printf("\nEndereço pertence à página %x\n",pagina);
+                delay(750); printf("\nEndereço pertence à página %x\n",pagina);
                 indice = retorna_indice_pagina(retorno,pagina);
                 if(indice==-1){
-                    printf("ERRO NAO ACHOU ENDERECO LOGICO NO VETOR!");
+                    delay(750); printf("ERRO NAO ACHOU ENDERECO LOGICO NO VETOR!");
                     exit(0);
                 }
                 if(busca_fila(processos, nomeProcesso)==1){
@@ -214,13 +226,13 @@ void main(int argc, char *argv[])
                 //imprime_memoria(ram,qtdPag);
                 //imprime_fila(processos);
                 //imprime_lista_encadeada(MyList);
-                printf("\nOperação finalizada\n-----------------------------------------------\n");
+                delay(750); printf("\nOperação finalizada\n-----------------------------------------------\n");
             }else{
-                printf("\nProcesso tentando acessar endereço maior que o disponível!\n");
+                delay(750); printf("\nProcesso tentando acessar endereço maior que o disponível!\n-----------------------------------------------\n");
             }
         }
     }
-    printf("\nGravando dados da SWAP no HD...\n");
+    delay(750); printf("\nGravando dados da SWAP no HD...\n");
     fclose(ftp);
     imprime_memoria(ram, qtdPag);
     imprime_lista_encadeada(MyList,tamPag);
@@ -238,7 +250,7 @@ tabelaPaginas *Cria_Nodo() //aloca memória para o nodo
     p = (tabelaPaginas *)malloc(sizeof(tabelaPaginas));
     if (!p)
     {
-        printf("Problema de alocação");
+        delay(750); printf("Problema de alocação");
         exit(0);
     }
     return p;
@@ -250,7 +262,7 @@ fila *Cria_Nodo_Fila() //aloca memória para o nodo
     p = (fila *)malloc(sizeof(fila));
     if (!p)
     {
-        printf("Problema de alocação");
+        delay(750); printf("Problema de alocação");
         exit(0);
     }
     return p;
@@ -265,21 +277,21 @@ void imprime_lista_encadeada(tabelaPaginas *N, int tamPag)
 {
     tabelaPaginas *aux;
     float porcent;
-    if (N == NULL)
-        printf("\n A lista está vazia!!");
-    else
+    if (N == NULL){
+        delay(750); printf("\n A lista está vazia!!");
+    }else
     {
         for (aux = N; aux != NULL; aux = aux->prox){
-            //printf("%d %d %d",aux->contSwap,aux->tamanho,tamPag);
+            //delay(750); printf("%d %d %d",aux->contSwap,aux->tamanho,tamPag);
             porcent=(float)(((float)aux->contSwap*tamPag)/(float)aux->tamanho)*100; 
             if(porcent>100)
                 porcent=100;   
-            printf("\n%s - %.2f por cento do processo na swap \n----Tabela de Páginas----\nE Lógico x E Físico\n",porcent,aux->processo);
+            delay(750); printf("\n%s - %.2f por cento do processo na swap \n----Tabela de Páginas----\nE Lógico x E Físico\n",porcent,aux->processo);
             for(int i=0;i<aux->qtdPag;i++){
                 if(aux->alocado[i]==0){
-                    printf("%x - N/A\n",aux->enderecoL[i]);
+                    delay(750); printf("%x - N/A\n",aux->enderecoL[i]);
                 }else{
-                    printf("%x - %x - %d\n",aux->enderecoL[i],aux->enderecoF[i],aux->alocado[i]);
+                    delay(750); printf("%x - %x - %d\n",aux->enderecoL[i],aux->enderecoF[i],aux->alocado[i]);
                 }
             }
         }
@@ -289,15 +301,15 @@ void imprime_lista_encadeada(tabelaPaginas *N, int tamPag)
 void imprime_fila(fila *N)
 {
     fila *aux;
-    if (N == NULL)
-        printf("\n A lista está vazia!!");
-    else
+    if (N == NULL){
+        delay(750); printf("\n A lista está vazia!!");
+    }else
     {
-        printf("\n\n----------------------FILA DE PROCESSOS-----------------------\n");
+        delay(750); printf("\n\n----------------------FILA DE PROCESSOS-----------------------\n");
         for (aux = N; aux != NULL; aux = aux->prox){
-            printf("[%s]",aux->nome);
+            delay(750); printf("[%s]",aux->nome);
         }
-        printf("\n\n");
+        delay(750); printf("\n\n");
     }
 }
 
@@ -330,23 +342,23 @@ int retorna_indice_pagina(tabelaPaginas *N, unsigned int endereco){
 }
 
 void atualiza_tabela_pag(tabelaPaginas **N, tabelaPaginas **tabela, fila **fila, int indice, char *nomeProcesso, int qtdPag, memoria **ram, char op, swap **S){
-    //printf("\n%X - %d\n",(*N)->enderecoL[indice],indice);
+    //delay(750); printf("\n%X - %d\n",(*N)->enderecoL[indice],indice);
     if((*N)->alocado[indice]==1 && (algoritmo == 3 || algoritmo == 2)){
         for(int i=0;i<qtdPag;i++){
             if((*N)->enderecoF[indice]==(*ram)[i].endereco){
-                printf("\nSetando bit de referencia para 1...\n");
+                delay(750); printf("\nSetando bit de referencia para 1...\n");
                 (*ram)[i].referenciado=1;
             }
         }
     }
     if(!(*N)->alocado[indice]){
-        printf("\nMemória não alocada para endereço lógico %x, buscando espaço em memória...\n",(*N)->enderecoL[indice]);
+        delay(750); printf("\nMemória não alocada para endereço lógico %x, buscando espaço em memória...\n",(*N)->enderecoL[indice]);
         for(int i=0;i<qtdPag;i++){
             if(!(*ram)[i].alocado){
-                printf("\nEspaço encontrado no endereço %x, alocando para o processo...\n",(*ram)[i].endereco);
+                delay(750); printf("\nEspaço encontrado no endereço %x, alocando para o processo...\n",(*ram)[i].endereco);
                 if(remove_swap(S,nomeProcesso,(*N)->enderecoL[indice])==1){
                     (*N)->contSwap--;
-                    printf("\nBuscando dados gravados na SWAP...\n");
+                    delay(750); printf("\nBuscando dados gravados na SWAP...\n");
                 }
                 strcpy((*ram)[i].processo,nomeProcesso);
                 (*ram)[i].alocado=1;
@@ -356,12 +368,12 @@ void atualiza_tabela_pag(tabelaPaginas **N, tabelaPaginas **tabela, fila **fila,
                     (*ram)[i].alteracao=1;
                 }
                 (*N)->enderecoF[indice]=(*ram)[i].endereco;
-                printf("\nAtualizando tabela de páginas, %x corresponde à %x\n",(*N)->enderecoL[indice],(*N)->enderecoF[indice]);
+                delay(750); printf("\nAtualizando tabela de páginas, %x corresponde à %x\n",(*N)->enderecoL[indice],(*N)->enderecoF[indice]);
                 (*N)->alocado[indice]=1;
                 return;
             }
             if(i==(qtdPag-1)){
-                printf("\nMemória cheia, procurando página para desalocar...\n");
+                delay(750); printf("\nMemória cheia, procurando página para desalocar...\n");
                 if(algoritmo==1){
                     desaloca_processo(ram,fila,tabela,qtdPag,S);
                 }else if(algoritmo==2){
@@ -369,9 +381,9 @@ void atualiza_tabela_pag(tabelaPaginas **N, tabelaPaginas **tabela, fila **fila,
                     char nomeProcessoD[3];
                     tabelaPaginas *aux;
                     for(int j=0;j<qtdPag;j++){
-                        //printf("\n%d - %d\n",j,(*ram)[j].referenciado==0);
+                        //delay(750); printf("\n%d - %d\n",j,(*ram)[j].referenciado==0);
                         if((*ram)[j].referenciado==0){
-                            printf("\nAchou página com bit de referência 0...\n");
+                            delay(750); printf("\nAchou página com bit de referência 0...\n");
                             strcpy(nomeProcessoD,(*ram)[j].processo);
                             enderecoFD = (*ram)[j].endereco;
                             //Desaloca Endereço Fisico no Processo a ser desalocado
@@ -405,7 +417,7 @@ void atualiza_tabela_pag(tabelaPaginas **N, tabelaPaginas **tabela, fila **fila,
                             }
                             (*N)->enderecoF[indice]=(*ram)[j].endereco;
                             (*N)->alocado[indice]=1;
-                            printf("\n%X - %X - %d\n",(*N)->enderecoF[indice],(*ram)[j].endereco,indice);
+                            delay(750); printf("\n%X - %X - %d\n",(*N)->enderecoF[indice],(*ram)[j].endereco,indice);
                             return;
                         }
                         if(j==(qtdPag-1)){
@@ -421,12 +433,12 @@ void atualiza_tabela_pag(tabelaPaginas **N, tabelaPaginas **tabela, fila **fila,
                     tabelaPaginas *aux;
                     //Muda bit de referencia
                     for(int j=indiceMem;j<qtdPag;j++){
-                        //printf("\n%d - %d\n",j,indiceMem);
+                        //delay(750); printf("\n%d - %d\n",j,indiceMem);
                         if((*ram)[j].referenciado==1){
-                            printf("\nMudando bit de referência de 1 para 0...\n");
+                            delay(750); printf("\nMudando bit de referência de 1 para 0...\n");
                             (*ram)[j].referenciado=0;
                         }else{
-                            printf("\nAchou página com bit de referência 0...\n");
+                            delay(750); printf("\nAchou página com bit de referência 0...\n");
                             strcpy(nomeProcessoD,(*ram)[j].processo);
                             enderecoFD = (*ram)[j].endereco;
                             //Desaloca Endereço Fisico no Processo a ser desalocado
@@ -460,7 +472,7 @@ void atualiza_tabela_pag(tabelaPaginas **N, tabelaPaginas **tabela, fila **fila,
                             }
                             (*N)->enderecoF[indice]=(*ram)[j].endereco;
                             (*N)->alocado[indice]=1;
-                            //printf("\n%X - %X - %d\n",(*N)->enderecoF[indice],(*ram)[j].endereco,indice);
+                            //delay(750); printf("\n%X - %X - %d\n",(*N)->enderecoF[indice],(*ram)[j].endereco,indice);
                             if(j==(qtdPag-1)){
                                 indiceMem=0;
                                 return;
@@ -490,12 +502,12 @@ void atualiza_tabela_pag(tabelaPaginas **N, tabelaPaginas **tabela, fila **fila,
 }
 
 void imprime_memoria(memoria *ram, int qtdPag){
-    printf("------------------------------Memória--------------------------------\n");
+    delay(750); printf("------------------------------Memória--------------------------------\n");
     for (int i = 0; i < qtdPag; i++)
     {
-        printf("%X - %s - %d - %d\n", ram[i].endereco, ram[i].processo, ram[i].alteracao, ram[i].referenciado);
+        delay(750); printf("%X - %s - %d - %d\n", ram[i].endereco, ram[i].processo, ram[i].alteracao, ram[i].referenciado);
     }
-    printf("\n--------------------------------------------------------------------\n");   
+    delay(750); printf("\n--------------------------------------------------------------------\n");   
 }
 
 int retorna_pagina_do_endereco_lido(tabelaPaginas *N, unsigned int enderecoLido, unsigned int *pagina){
@@ -545,7 +557,7 @@ int exclui_elem_fila(fila **N, char *nome)
             }
             if(!strcmp(aux->nome, nome))
             {    
-                printf("\nNAO DEVERIA REMOVER DO FIM\n");
+                delay(750); printf("\nNAO DEVERIA REMOVER DO FIM\n");
                 return 0;
             }
         }
@@ -606,7 +618,7 @@ void insere_fila(fila **N, char *nome)
 void desaloca_processo(memoria **ram, fila **N, tabelaPaginas **pags, int qtdPag, swap **S){
     char nomeProcessoDesalocar[3];
     strcpy(nomeProcessoDesalocar,(*N)->nome);
-    printf("\nPágina do processo %s sendo desalocada...\n",nomeProcessoDesalocar);
+    delay(750); printf("\nPágina do processo %s sendo desalocada...\n",nomeProcessoDesalocar);
     tabelaPaginas *aux;
     int controle=0;
     unsigned int enderecoFDesaloca, enderecoLDesaloca;
@@ -659,7 +671,7 @@ swap *Cria_Swap()
     p = (swap *)malloc(sizeof(swap));
     if (!p)
     {
-        printf("Problema de alocação");
+        delay(750); printf("Problema de alocação");
         exit(0);
     }
     return p;
@@ -730,14 +742,14 @@ void insere_swap(swap **N, char *nome, unsigned int endereco)
 void imprime_swap(swap *N)
 {
     swap *aux;
-    if (N == NULL)
-        printf("\n A lista está vazia!!");
-    else
+    if (N == NULL){
+        delay(750); printf("\n A lista está vazia!!");
+    }else
     {
-        printf("\n\n----------------------SWAP-----------------------\n");
+        delay(750); printf("\n\n----------------------SWAP-----------------------\n");
         for (aux = N; aux != NULL; aux = aux->prox){
-            printf("[%s] - [%x]",aux->nome,aux->endereco);
+            delay(750); printf("[%s] - [%x]",aux->nome,aux->endereco);
         }
-        printf("\n\n");
+        delay(750); printf("\n\n");
     }
 }
